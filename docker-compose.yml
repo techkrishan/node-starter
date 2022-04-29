@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  node-starter-server:
+    restart: unless-stopped
+    tty: true
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: node-starter-server
+    container_name: node-starter-server
+    volumes:
+      - /node_modules
+      - .:/usr/src/app
+    ports:
+      - ${SERVER_PORT}:8095
+    networks:
+      node-starter-network:
+        ipv4_address: 172.30.0.10
+
+networks:
+  node-starter-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
