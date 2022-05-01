@@ -2,6 +2,7 @@ import express from 'express';
 import { json } from 'body-parser';
 import cors from 'cors';
 import { connectToDB } from './configs/dbConfig';
+import router from './routes';
 
 const app = express();
 
@@ -13,12 +14,6 @@ app.use(cors());
 connectToDB();
 
 // Routers
-app.get('/', (req, res) => {
-  res.send('Hello World! Welcome to the Node Application.');
-});
-
-app.get('/about', (req, res) => {
-  res.send('This is the about page!');
-});
+app.use('/api', router);
 
 export default app;
