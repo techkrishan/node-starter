@@ -1,7 +1,6 @@
 import validationMessages from "../messages/validationMessages";
 
 const validateMiddleware = (schema, property) => (req, res, next) => {
-  console.log('I am Here in validation middleware!');
   const { error } = schema.validate(req[property], { abortEarly: false });
   const valid = error == null;
   if (valid) {

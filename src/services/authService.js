@@ -1,46 +1,59 @@
-authService.registerUser = async (requestData) => {
-    requestData.email = requestData.email.toLowerCase();
-    const { email, first_name, last_name, phone, password } = requestData;
-    
-    try {
-        const [userInfoEmail, userInfoPhone] = await Promise.all([await UserDao.getCount({ email }), await UserDao.getCount({ phone })]);
-        if (userInfoEmail) throw new customError(CONSTANTS.MESSAGE.EMAIL_EXIST, ErrorConstant.UN_PROCESSABLE_ENTITY);
-        if (userInfoPhone) throw new customError(CONSTANTS.MESSAGE.PHONE_EXIST, ErrorConstant.UN_PROCESSABLE_ENTITY);
-        registerData.otp = await CommonUtils.generateOTP();
-        const otp_created_time = new Date();
-        registerData.hasPasswordSet = true;
-        await CommonUtils.sendSMS(registerData);
-        registerData.password = await COMMON.generatePasswordHash(password);
-        registerData.otp_created_time = otp_created_time;
-        let createdUser = await UserDao.createUser(registerData);
-        const register = CONSTANTS.KEYS.REGISTER;
-        createdUser = CommonUtils.prepareObject(register, JSON.parse(JSON.stringify(createdUser)));
+import userDao from '../dao/userDao';
+import validationMessages from '../messages/validationMessages';
+import responseMessages from '../messages/responseMessages';
+import statusCodes from '../configs/statusCodes';
+import common from '../utils/common';
+import customError from '../utils/customErrors';
 
-        const userFreeSubscriptionData = await subscriptionDao.getSubscriptionDetail({ type: 'free' });
-        userFreeSubscriptionData.subscriptionid = CommonUtils.convertToObjectId(userFreeSubscriptionData._id);
-        userFreeSubscriptionData.expiry_date = CommonUtils.addMonthFromNow(new Date(), userFreeSubscriptionData.expiry_in_months);
-        userFreeSubscriptionData.userid = CommonUtils.convertToObjectId(createdUser._id);
-        const userSubscriptionParameter = CONSTANTS.KEYS.USER_SUBSCRIPTION;
+const authService = {};
 
-        const addUserFreeSubscriptionData = CommonUtils.prepareObject(userSubscriptionParameter, userFreeSubscriptionData);
-        addUserFreeSubscriptionData.is_active = true;
-        await subscriptionDao.createUserSubscription(addUserFreeSubscriptionData);
-        const token = await CommonUtils.createJWT({ email, _id: createdUser._id });
-        createdUser.token = token;
+authService.register = async (requestData) => {
+    const userData = {
+        email: requestData.email.toLowerCase(),
+        first_name: requestData.first_name,
+        last_name: requestData.last_name,
+        name: `${requestData.first_name} ${requestData.last_name}`
+    };
+    const currentDateTime = common.currentUTCDateTime();
 
-        const response = {
-            status: true,
-            message: CONSTANTS.MESSAGE.REGISTER_SUCCESS,
-            data: createdUser,
-        };
-
-        // Only for unit testing purpose
-        if (process.env.NODE_ENV === 'test') {
-            response.data.otp = registerData.otp;
-        }
-
-        return response;
-    } catch (err) {
-        return CommonUtils.throwError(err);
+    // Check is email already exists
+    const isEmailExists = await userDao.isExists({ email: userData.email });
+    if (isEmailExists) {
+        throw new customError(validationMessages.EMAIL_ALREADY_EXISTS, statusCodes.UNPROCESSABLE_ENTITY);
     }
+
+    // Generate OTP
+    userData.otp = await common.generateOTP();
+    userData.otp_created_time = currentDateTime;
+
+    // Password set true
+    userData.has_password_set = true;
+
+    // Generate password
+    userData.password = await common.generatePasswordHash(requestData.password);
+
+    // Save user details
+    const user = await userDao.saveUser(userData);
+
+    // Get details
+    const userDetails = await userDao.getUserById(user._id);
+
+    // Generate and set JWT auth token
+    userDetails.token = await common.createJWT({ email: userDetails.email, _id: userDetails._id });
+
+    // Send email verification token
+    // emailUtils.sendRegistrationEmail(userDetails);
+
+    // Send OTP on mobile
+    // smsUtils.sendOTP(userDetails);
+
+    // Return response
+    return {
+        status: true,
+        message: responseMessages.USER_REGISTERED_SUCCESSFULLY,
+        data: userDetails,
+
+    };
 };
+
+export default authService;
