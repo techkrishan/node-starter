@@ -2,6 +2,7 @@ import moment from 'moment-timezone';
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import constants from '../configs/constants';
+import customError from '../utils/customErrors';
 
 async function generateOTP() {
     return Math.floor(100000 + Math.random() * 900000);
@@ -32,6 +33,10 @@ async function generatePassword() {
     const password = randomString(constants.NUMBERS.EIGHT, 'aA');
     const hash = await generatePasswordHash(password);
     return { password, hash };
+}
+
+async function comparePasswordHash(password, oldPasswordHash) {
+    return bcryptjs.compare(password, oldPasswordHash);
 }
 
 /**
@@ -72,13 +77,38 @@ async function errorResponse(err, res) {
     return res.status(statusCode).json(error);
 }
 
+async function isOTPExpired(startDateTime, expiryTime) {
+    const currentDateTime = currentUTCDateTime();
+    startDateTime = moment(startDateTime).utc().format();
+    const expiredDateTime = moment(startDateTime).add(expiryTime, 'minutes').utc().format();
+    console.log('currentDateTime: ', currentDateTime);
+    console.log('startDateTime: ', startDateTime);
+    console.log('expiredDateTime: ', expiredDateTime);
+    return currentDateTime > expiredDateTime;
+}
+
+/**
+ * @description Middleware to handle common error.
+ * @property {Object} payload token
+ * @returns {error}
+ */
+async function throwError(err) {
+    if (err.message && err.status) {
+        throw new customError(err.message, err.status);
+    }
+    throw err;
+}
+
 export default {
     generateOTP,
     currentUTCDateTime,
     generatePasswordHash,
     generatePassword,
+    comparePasswordHash,
     createJWT,
     verifyJWT,
     verifyCustomJWT,
     errorResponse,
+    isOTPExpired,
+    throwError,
 }

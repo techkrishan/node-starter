@@ -28,6 +28,11 @@ async function renderHtmlPage(data) {
  * @returns {string} Success message on successful other wise error
  */
 const sendMail = async (data, customHtml = false) => {
+    // Configurable from env file
+    if (process.env.EMAIL_SERVICE === "false") {
+        return true;
+    }
+
     try {
         let html = '';
         if (customHtml) {
@@ -36,7 +41,7 @@ const sendMail = async (data, customHtml = false) => {
             html = await renderHtmlPage(data);
         }
 
-        /* create reusable transporter object using the default SMTP transport */
+        // create reusable transporter object using the default SMTP transport
         const transporter = nodemailer.createTransport({
             host: process.env.EMAIL_HOST,
             port: process.env.EMAIL_PORT,
@@ -47,18 +52,15 @@ const sendMail = async (data, customHtml = false) => {
             }
         });
 
-        /*
-         *  setup email data with unicode symbols
-         */
+        // setup email data with unicode symbols
         const mailOptions = {
             from: `${process.env.APP_NAME} <${process.env.FROM_EMAIL}>`,
             to: data.to,
             subject: data.subject,
             html,
         };
-        /*
-         *  send mail with defined transport object
-         */
+
+        // send mail with defined transport object
         await transporter.sendMail(mailOptions);
         return emailMessages.EMAIL_SENT;
     } catch (error) {
@@ -76,6 +78,62 @@ export const sendRegistrationEmail = async (userDetails) => {
         to: email,
         subject: emailMessages.USER_REGISTRATION_SUBJECT,
         template: path.join(__dirname, '../views/emailTemplates/userRegistration.hbs'),
+        templateData: {
+            first_name,
+            email,
+            email_verification_otp,
+            url: process.env.WEB_APP_BASE_URL,
+        },
+    };
+    return sendMail(emailDetails);
+};
+
+export const sendForgotPasswordEmail = async (userDetails) => {
+    const {
+        email, first_name, forgot_password_otp,
+    } = userDetails;
+
+    const emailDetails = {
+        to: email,
+        subject: emailMessages.FORGOT_PASSWORD,
+        template: path.join(__dirname, '../views/emailTemplates/forgotPassword.hbs'),
+        templateData: {
+            first_name,
+            email,
+            forgot_password_otp,
+            url: process.env.WEB_APP_BASE_URL,
+        },
+    };
+    return sendMail(emailDetails);
+};
+
+export const sendResetPasswordEmail = async (userDetails) => {
+    const {
+        email, first_name,
+    } = userDetails;
+
+    const emailDetails = {
+        to: email,
+        subject: emailMessages.RESET_PASSWORD_SUCCESS,
+        template: path.join(__dirname, '../views/emailTemplates/resetPassword.hbs'),
+        templateData: {
+            first_name,
+            email,
+            url: process.env.WEB_APP_BASE_URL,
+        },
+    };
+    return sendMail(emailDetails);
+};
+
+export const sendEmailVerificationOTPEmail = async (userDetails) => {
+    const {
+        email, first_name,
+    } = userDetails;
+
+    const emailDetails = {
+        to: email,
+        subject: emailMessages.EMAIL_VERIFICATION_OTP_EMAIL,
+        template: path.join(__dirname, '../views/emailTemplates/emailVerificationOtp.hbs'),
         templateData: {
             first_name,
             email,

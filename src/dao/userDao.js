@@ -1,16 +1,8 @@
 import BaseDao from './baseDao';
 import UserModel from '../models/userModel';
+import projections from '../configs/projections';
 
 const userDao = new BaseDao(UserModel);
-
-const PROJECTION = {
-    all: {},
-    list: {},
-    details: { password: 0 },
-    auth: {
-        _id: 1, email: 1, first_name: 1, last_name: 1, phone: 1, password: 1,
-    }
-};
 
 /**
  * Create new user in the database.
@@ -27,7 +19,7 @@ async function saveUser(userInfo) {
  * @param {object} filter Filter conditions to get the user details 
  * @returns 
  */
-async function getUserDetails(filter, projection = PROJECTION.details) {
+async function getUser(filter, projection = projections.USER.DETAILS) {
     return UserModel.findOne(filter, projection).lean().exec();
 }
 
@@ -40,7 +32,7 @@ async function getUserById(id, fullDetails = false) {
     if (fullDetails) {
         return UserModel.findById(id).lean().exec();
     }
-    return UserModel.findById(id, PROJECTION.details).lean().exec();
+    return UserModel.findById(id, projections.USER.DETAILS).lean().exec();
 }
 
 /**
@@ -62,9 +54,15 @@ async function getCount(query) {
     return count > 0;
 }
 
+async function updateUser(id, data) {
+    return UserModel.updateOne({ _id: id }, data);
+}
+
 export default {
     saveUser,
     getUserById,
     getCount,
     isExists,
+    getUser,
+    updateUser,
 };

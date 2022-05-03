@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema({
   phone_verification_otp: modelConstants.TYPE_NUMBER,
   phone_verification_otp_created_time: modelConstants.TYPE_DATE,
   forgot_password_otp: modelConstants.TYPE_STRING,
+  forgot_password_otp_created_time: modelConstants.TYPE_DATE,
   is_verified_by_phone: modelConstants.TYPE_BOOLEAN_FALSE_INDEX,
   is_verified_by_email: modelConstants.TYPE_BOOLEAN_FALSE_INDEX,
   stripe_customer_id: modelConstants.TYPE_STRING,
