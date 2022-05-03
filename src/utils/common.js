@@ -40,7 +40,7 @@ async function generatePassword() {
  * @returns {JWT token}
  */
 async function createJWT(payload = {}) {
-    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: constants.JWT_TOKEN_EXPIRY });
+    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_TOKEN_EXPIRY });
 }
 
 /**

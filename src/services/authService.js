@@ -4,6 +4,7 @@ import responseMessages from '../messages/responseMessages';
 import statusCodes from '../configs/statusCodes';
 import common from '../utils/common';
 import customError from '../utils/customErrors';
+import { sendRegistrationEmail } from '../utils/email';
 
 const authService = {};
 
@@ -22,9 +23,13 @@ authService.register = async (requestData) => {
         throw new customError(validationMessages.EMAIL_ALREADY_EXISTS, statusCodes.UNPROCESSABLE_ENTITY);
     }
 
-    // Generate OTP
-    userData.otp = await common.generateOTP();
-    userData.otp_created_time = currentDateTime;
+    // Generate phone verification OTP
+    userData.phone_verification_otp = await common.generateOTP();
+    userData.phone_verification_otp_created_time = currentDateTime;
+
+    // Generate email verification OTP
+    userData.email_verification_otp = await common.generateOTP();
+    userData.email_verification_otp_created_time = currentDateTime;
 
     // Password set true
     userData.has_password_set = true;
@@ -42,7 +47,7 @@ authService.register = async (requestData) => {
     userDetails.token = await common.createJWT({ email: userDetails.email, _id: userDetails._id });
 
     // Send email verification token
-    // emailUtils.sendRegistrationEmail(userDetails);
+    sendRegistrationEmail(userDetails);
 
     // Send OTP on mobile
     // smsUtils.sendOTP(userDetails);
@@ -52,7 +57,6 @@ authService.register = async (requestData) => {
         status: true,
         message: responseMessages.USER_REGISTERED_SUCCESSFULLY,
         data: userDetails,
-
     };
 };
 
