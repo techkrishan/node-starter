@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
   phone: modelConstants.TYPE_NUMBER,
   country_code: modelConstants.TYPE_NUMBER,
   country_name: modelConstants.TYPE_STRING,
-  dob: modelConstants.TYPE_DATE,
+  dob: modelConstants.TYPE_DATE_NULL,
   gender: modelConstants.TYPE_STRING,
   marital_status: modelConstants.TYPE_STRING,
   location: modelConstants.TYPE_STRING,

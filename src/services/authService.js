@@ -14,7 +14,8 @@ authService.register = async (requestData) => {
         email: requestData.email.toLowerCase(),
         first_name: requestData.first_name,
         last_name: requestData.last_name,
-        name: `${requestData.first_name} ${requestData.last_name}`
+        name: `${requestData.first_name} ${requestData.last_name}`,
+        phone: requestData.phone,
     };
     const currentDateTime = common.currentUTCDateTime();
 
@@ -45,7 +46,7 @@ authService.register = async (requestData) => {
     const userDetails = await userDao.getUserById(user._id);
 
     // Generate and set JWT auth token
-    userDetails.token = await common.createJWT({ email: userDetails.email, _id: userDetails._id });
+    const token = await common.createJWT({ email: userDetails.email, _id: userDetails._id });
 
     // Send email verification token
     sendRegistrationEmail(userDetails);
@@ -57,6 +58,7 @@ authService.register = async (requestData) => {
     return {
         status: true,
         message: responseMessages.USER_REGISTERED_SUCCESSFULLY,
+        token,
         data: userDetails,
     };
 };
@@ -82,14 +84,15 @@ authService.login = async (requestData) => {
     }
 
     // Generate and set JWT auth token
-    user.token = await common.createJWT({ email: user.email, _id: user._id });
+    const token = await common.createJWT({ email: user.email, _id: user._id });
 
     // remove password key
     delete user['password'];
 
     return {
         status: true,
-        message: responseMessages.EMAIL_VERIFICATION_OTP_SENT,
+        message: responseMessages.OK,
+        token,
         data: user,
     };
 };

@@ -4,6 +4,7 @@ import fs from 'fs';
 import Handlebars from 'handlebars';
 import logger from '../configs/logger';
 import emailMessages from '../messages/emailMessages';
+import common from '../utils/common';
 
 /**
  * This function is used to generate HTML from the template files
@@ -17,7 +18,7 @@ async function renderHtmlPage(data) {
         const template = Handlebars.compile(file, { strict: true });
         returnData = template(data.templateData);
     } catch (err) {
-        throwError(err);
+        return common.throwError(err);
     }
     return returnData;
 }
@@ -65,7 +66,7 @@ const sendMail = async (data, customHtml = false) => {
         return emailMessages.EMAIL_SENT;
     } catch (error) {
         logger.error(error);
-        return throwError(error);
+        return common.throwError(error);
     }
 };
 
